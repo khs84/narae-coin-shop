@@ -1,0 +1,765 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0;font-family:system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
+<title>나래 동전 가게</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap">
+<style>
+/* Layout: 동네 가게 앞모습. 줄무늬 차양 아래 한 화면짜리 놀이판, 큰 터치 버튼. 교실 화면용 밝은 단일 테마로 고정 */
+:root {
+  --bg: #e7f2ec;
+  --paper: #ffffff;
+  --ink: #1c2a26;
+  --ink-soft: #4b625a;
+  --shop: #1e6a5a;
+  --shop-deep: #144b40;
+  --line: #c6dcd2;
+  --tag: #d6473a;
+  --gold: #f1b234;
+  --ok: #2b8a57;
+  --ok-soft: #dff3e6;
+  --try: #c9692a;
+  --try-soft: #fdeede;
+  --f-display: "Jua", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+  --f-body: "Gowun Dodum", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+  --coin: clamp(54px, 11vmin, 118px);
+  color-scheme: light;
+}
+html, body { height: 100%; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--f-body); font-size: clamp(16px, 2.2vmin, 22px);
+  overflow-x: hidden; -webkit-tap-highlight-color: transparent;
+  user-select: none; -webkit-user-select: none;
+}
+button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; }
+button:focus-visible { outline: 4px solid var(--gold); outline-offset: 3px; }
+.screen { min-height: 100%; display: flex; flex-direction: column; }
+.wrap { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+
+/* 차양 */
+.awning { height: clamp(44px, 8vmin, 72px); position: relative; background: repeating-linear-gradient(90deg, var(--shop) 0 56px, var(--paper) 56px 112px); box-shadow: inset 0 -6px 0 rgba(0,0,0,.08); }
+.awning::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 18px;
+  background:
+    radial-gradient(circle at 28px 0, var(--shop) 27px, transparent 28px) 0 0 / 112px 18px repeat-x,
+    radial-gradient(circle at 84px 0, var(--paper) 27px, transparent 28px) 0 0 / 112px 18px repeat-x; }
+.awning.thin { height: 18px; }
+.awning.thin::after { height: 10px; background:
+    radial-gradient(circle at 28px 0, var(--shop) 27px, transparent 28px) 0 0 / 112px 10px repeat-x,
+    radial-gradient(circle at 84px 0, var(--paper) 27px, transparent 28px) 0 0 / 112px 10px repeat-x; }
+
+/* 동전 */
+.coin { display: inline-block; width: calc(var(--coin) * var(--d, 1)); aspect-ratio: 1; max-width: 100%; flex: none; border-radius: 50%; filter: drop-shadow(0 3px 2px rgba(0,0,0,.22)); }
+.coin svg { width: 100%; height: 100%; display: block; }
+.flipping { animation: flip .32s ease-in-out; }
+@keyframes flip { 50% { transform: scaleX(0); } }
+
+/* 홈 */
+.home-hero { display: grid; gap: clamp(10px, 2vmin, 20px); justify-items: center; text-align: center; padding-block: clamp(30px, 6vmin, 56px) 8px; }
+.sign { font-family: var(--f-display); font-size: clamp(40px, 9vmin, 92px); color: var(--shop-deep); line-height: 1; letter-spacing: .02em; text-wrap: balance; }
+.sign small { display: block; font-size: .32em; color: var(--ink-soft); margin-top: .5em; letter-spacing: 0; }
+.coin-shelf { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-end; gap: clamp(14px, 3vmin, 36px); padding: 14px 18px; background: var(--paper); border-radius: 22px; border: 3px solid var(--line); }
+.shelf-coin { display: grid; justify-items: center; gap: 6px; }
+.shelf-coin span.w { font-family: var(--f-display); font-size: 1.15em; }
+.shelf-note { color: var(--ink-soft); font-size: .85em; }
+.home-body { display: grid; gap: 18px; width: min(1100px, 100%); margin: 0 auto; padding-block: 12px 32px; }
+.stages { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
+.stage-card { text-align: left; background: var(--paper); border: 3px solid var(--line); border-radius: 20px; padding: 16px 18px; display: grid; gap: 4px; transition: transform .15s, border-color .15s; min-width: 0; }
+.stage-card:hover { transform: translateY(-3px); border-color: var(--shop); }
+.stage-card .no { font-family: var(--f-display); color: var(--paper); background: var(--shop); width: 1.9em; height: 1.9em; border-radius: 50%; display: grid; place-items: center; font-size: 1.1em; }
+.stage-card .t { font-family: var(--f-display); font-size: 1.45em; }
+.stage-card .d { color: var(--ink-soft); }
+.stage-card .ws { font-size: .8em; color: var(--shop); font-weight: 700; }
+.big-btn { font-family: var(--f-display); font-size: clamp(24px, 4vmin, 38px); background: var(--shop); color: var(--paper); border-radius: 999px; padding: .5em 1.6em; box-shadow: 0 6px 0 var(--shop-deep); justify-self: center; transition: transform .1s, box-shadow .1s; }
+.big-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--shop-deep); }
+.settings { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; justify-content: center; background: var(--paper); border: 3px dashed var(--line); border-radius: 18px; padding: 14px 16px; }
+.settings .lab { font-family: var(--f-display); color: var(--ink-soft); }
+.seg { display: inline-flex; border: 3px solid var(--shop); border-radius: 999px; overflow: hidden; }
+.seg button { padding: .35em .9em; font-family: var(--f-display); }
+.seg button[aria-pressed="true"] { background: var(--shop); color: var(--paper); }
+.tog { display: inline-flex; align-items: center; gap: 8px; font-family: var(--f-display); }
+.tog .sw { width: 52px; height: 30px; border-radius: 999px; background: var(--line); position: relative; transition: background .15s; }
+.tog .sw::after { content: ""; position: absolute; top: 4px; left: 4px; width: 22px; height: 22px; border-radius: 50%; background: var(--paper); transition: left .15s; box-shadow: 0 1px 2px rgba(0,0,0,.3); }
+.tog[aria-pressed="true"] .sw { background: var(--ok); }
+.tog[aria-pressed="true"] .sw::after { left: 26px; }
+.voice-row { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; justify-content: center; width: 100%; }
+.voice-row select { font-family: var(--f-display); font-size: 1em; border: 3px solid var(--shop); border-radius: 14px; padding: .25em .6em; background: var(--paper); color: var(--ink); max-width: 100%; min-width: 0; }
+.voice-tip { width: 100%; text-align: center; color: var(--ink-soft); font-size: .85em; }
+.small-btn { font-family: var(--f-display); border: 3px solid var(--shop); color: var(--shop-deep); border-radius: 999px; padding: .3em 1em; background: var(--paper); }
+
+/* 놀이 화면 */
+.bar { display: flex; align-items: center; gap: 12px; padding-block: 12px; flex-wrap: wrap; }
+.bar .title { font-family: var(--f-display); font-size: clamp(20px, 3.4vmin, 32px); color: var(--shop-deep); flex: 1 1 auto; min-width: 0; }
+.dots { display: flex; gap: 6px; }
+.dots i { width: 14px; height: 14px; border-radius: 50%; background: var(--line); }
+.dots i.done { background: var(--ok); }
+.dots i.now { background: var(--gold); transform: scale(1.25); }
+.stars { font-family: var(--f-display); font-size: 1.3em; color: var(--ink); background: var(--paper); border-radius: 999px; padding: .15em .8em; border: 3px solid var(--gold); white-space: nowrap; }
+.stars b { color: var(--gold); }
+.icon-btn { width: 52px; height: 52px; border-radius: 50%; background: var(--paper); border: 3px solid var(--line); display: grid; place-items: center; flex: none; }
+.icon-btn svg { width: 26px; height: 26px; }
+.icon-btn[aria-pressed="false"] { opacity: .55; }
+#stage { flex: 1; display: flex; flex-direction: column; padding-block: 4px 28px; }
+
+.prompt { display: flex; align-items: center; justify-content: center; gap: 12px; text-align: center; font-family: var(--f-display); font-size: clamp(24px, 4.6vmin, 46px); line-height: 1.25; text-wrap: balance; margin: 4px 0 clamp(12px, 3vmin, 30px); }
+.prompt .listen { font-size: 16px; }
+.q-row { flex: 1; display: flex; align-items: center; justify-content: center; gap: clamp(20px, 6vmin, 80px); flex-wrap: wrap; }
+.hero { display: grid; justify-items: center; gap: 10px; padding: clamp(14px, 3vmin, 28px); background: var(--paper); border-radius: 28px; border: 3px solid var(--line); }
+.hero .cap { font-family: var(--f-display); color: var(--ink-soft); }
+.hero .coin { --coin: clamp(120px, 27vmin, 250px); }
+.arrow { font-family: var(--f-display); font-size: clamp(30px, 6vmin, 60px); color: var(--shop); }
+.opts { display: flex; flex-wrap: wrap; gap: clamp(12px, 3vmin, 30px); justify-content: center; align-items: center; max-width: 100%; }
+.opt { background: var(--paper); border: 4px solid var(--line); border-radius: 24px; padding: clamp(10px, 2vmin, 18px); display: grid; place-items: center; min-width: 0; transition: transform .12s, border-color .12s; }
+.opt:hover { border-color: var(--shop); }
+.opt:active { transform: scale(.96); }
+.opt .coin { --coin: clamp(84px, 17vmin, 170px); }
+.opt.word { font-family: var(--f-display); font-size: clamp(28px, 5.5vmin, 56px); padding: .35em .8em; }
+.opt.right { border-color: var(--ok); background: var(--ok-soft); }
+.opt.hint { animation: glow 1.2s ease-in-out infinite; }
+@keyframes glow { 50% { box-shadow: 0 0 0 10px rgba(241,178,52,.55); border-color: var(--gold); } }
+.shake { animation: shake .45s; }
+@keyframes shake { 20%,60% { transform: translateX(-10px); } 40%,80% { transform: translateX(10px); } }
+.bundle { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; width: clamp(190px, 30vmin, 330px); }
+.bundle .coin { --coin: clamp(40px, 7vmin, 70px); }
+
+/* 인트로·마침 */
+.intro { margin: auto; text-align: center; display: grid; gap: 16px; justify-items: center; background: var(--paper); border: 3px solid var(--line); border-radius: 28px; padding: clamp(22px, 5vmin, 48px); width: min(720px, 100%); }
+.intro .cheer { font-family: var(--f-display); color: var(--ok); font-size: 1.3em; }
+.intro h2 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: clamp(32px, 6vmin, 60px); color: var(--shop-deep); text-wrap: balance; }
+.intro p { margin: 0; font-size: 1.15em; color: var(--ink-soft); max-width: 32em; }
+.intro .pic { font-size: clamp(56px, 11vmin, 110px); line-height: 1; }
+.basket { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; font-size: clamp(44px, 8vmin, 80px); }
+.end-btns { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; }
+
+/* 가게 */
+.shop { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); grid-template-areas: "item counter" "bank bank"; gap: clamp(12px, 2.5vmin, 24px); align-items: stretch; }
+.item-card { grid-area: item; background: var(--paper); border: 3px solid var(--line); border-radius: 26px; display: grid; justify-items: center; align-content: center; gap: 8px; padding: 16px; position: relative; }
+.item-card .em { font-size: clamp(70px, 16vmin, 160px); line-height: 1; }
+.item-card .nm { font-family: var(--f-display); font-size: clamp(26px, 4.5vmin, 44px); }
+.tag { font-family: var(--f-display); font-size: clamp(30px, 6vmin, 60px); color: var(--paper); background: var(--tag); padding: .1em .7em .1em 1em; border-radius: 8px 22px 22px 8px; position: relative; box-shadow: 0 4px 0 rgba(0,0,0,.15); }
+.tag::before { content: ""; position: absolute; left: .35em; top: 50%; width: .28em; height: .28em; margin-top: -.14em; border-radius: 50%; background: var(--paper); }
+.counter { grid-area: counter; display: grid; gap: 12px; align-content: stretch; grid-template-rows: 1fr auto; min-width: 0; }
+.tray { background: #d9b98a; background-image: repeating-linear-gradient(90deg, rgba(0,0,0,.04) 0 3px, transparent 3px 22px); border: 6px solid #9a7546; border-radius: 22px; padding: 14px; min-height: clamp(150px, 26vmin, 260px); display: flex; flex-direction: column; gap: 8px; transition: box-shadow .15s; }
+.tray.over { box-shadow: 0 0 0 8px var(--gold); }
+.tray-label { font-family: var(--f-display); color: #5c4325; }
+.tray-coins { flex: 1; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 10px; }
+.tray-coins .coin { --coin: clamp(56px, 10vmin, 100px); }
+.tray-coins button { border-radius: 50%; animation: drop .25s ease-out; }
+@keyframes drop { from { transform: translateY(-24px) scale(1.1); opacity: .4; } }
+.tray-empty { margin: auto; color: #5c4325; font-size: 1.05em; text-align: center; }
+.pay-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+.sum { font-family: var(--f-display); font-size: clamp(22px, 4vmin, 38px); font-variant-numeric: tabular-nums; }
+.sum b { color: var(--shop-deep); }
+.pay-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+.pay-btns .big-btn { font-size: clamp(22px, 3.6vmin, 34px); }
+.bank { grid-area: bank; background: var(--paper); border: 3px solid var(--line); border-radius: 26px; padding: 12px 16px; display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-around; gap: 12px; }
+.bank .lab { width: 100%; text-align: center; font-family: var(--f-display); color: var(--ink-soft); }
+.bank-coin { display: grid; justify-items: center; gap: 6px; touch-action: none; padding: 6px; border-radius: 18px; }
+.bank-coin .coin { --coin: clamp(70px, 13vmin, 130px); }
+.bank-coin .w { font-family: var(--f-display); font-size: 1.15em; }
+.bank-coin:active .coin { transform: scale(.94); }
+.ghost { position: fixed; z-index: 50; pointer-events: none; transform: translate(-50%, -50%) scale(1.1); --coin: clamp(70px, 13vmin, 130px); }
+
+/* 말풍선 */
+.fb { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 40; font-family: var(--f-display); font-size: clamp(24px, 4.4vmin, 44px); padding: .45em 1.2em; border-radius: 999px; border: 4px solid; box-shadow: 0 8px 24px rgba(0,0,0,.15); max-width: calc(100% - 32px); text-align: center; animation: pop .25s ease-out; }
+.fb.ok { background: var(--ok-soft); border-color: var(--ok); color: #155c37; }
+.fb.try { background: var(--try-soft); border-color: var(--try); color: #7a3b10; }
+@keyframes pop { from { transform: translateX(-50%) scale(.7); opacity: 0; } }
+.confetti { position: fixed; inset: 0; pointer-events: none; z-index: 45; }
+
+@media (max-width: 700px) {
+  .shop { grid-template-columns: 1fr; grid-template-areas: "item" "counter" "bank"; }
+  .item-card { grid-template-columns: auto 1fr; justify-items: start; align-items: center; }
+  .item-card .tag { grid-column: 1 / -1; justify-self: center; }
+  .arrow { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+</style>
+
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <radialGradient id="m-copper" cx="35%" cy="30%" r="80%">
+      <stop offset="0" stop-color="#f7c49c"/><stop offset=".55" stop-color="#cf7d50"/><stop offset="1" stop-color="#8e4727"/>
+    </radialGradient>
+    <radialGradient id="m-silver" cx="35%" cy="30%" r="80%">
+      <stop offset="0" stop-color="#fbfcfd"/><stop offset=".55" stop-color="#ccd2d7"/><stop offset="1" stop-color="#8b939a"/>
+    </radialGradient>
+  </defs>
+</svg>
+
+<!-- 홈 -->
+<section id="home" class="screen">
+  <div class="awning"></div>
+  <div class="wrap home-hero">
+    <h1 class="sign" style="margin:0">나래 동전 가게<small>동전을 알고, 바꾸고, 물건을 사요</small></h1>
+    <div class="coin-shelf" id="shelf"></div>
+    <div class="shelf-note">동전을 누르면 뒤집히고 이름을 읽어 줘요</div>
+  </div>
+  <div class="wrap home-body">
+    <div class="stages" id="stageCards"></div>
+    <button class="big-btn" id="startAll">처음부터 놀이 시작</button>
+    <div class="settings">
+      <span class="lab">난이도</span>
+      <div class="seg" id="levelSeg" role="group" aria-label="난이도">
+        <button data-level="easy" aria-pressed="false">쉬움</button>
+        <button data-level="normal" aria-pressed="false">보통</button>
+        <button data-level="hard" aria-pressed="false">어려움</button>
+      </div>
+      <button class="tog" id="togSound" aria-pressed="true"><span class="sw"></span>소리·읽어 주기</button>
+      <button class="tog" id="togSum" aria-pressed="true"><span class="sw"></span>가게에서 낸 돈 합계 보기</button>
+      <button class="small-btn" id="fullBtn">전체 화면</button>
+      <div class="voice-row">
+        <span class="lab">목소리</span>
+        <select id="voiceSel" aria-label="읽어 주는 목소리"></select>
+        <div class="seg" id="rateSeg" role="group" aria-label="말 빠르기">
+          <button data-rate="0.8" aria-pressed="false">천천히</button>
+          <button data-rate="0.95" aria-pressed="false">보통</button>
+          <button data-rate="1.1" aria-pressed="false">빠르게</button>
+        </div>
+        <button class="small-btn" id="voiceTest">들어 보기</button>
+        <div class="voice-tip" id="voiceTip"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 놀이 -->
+<section id="play" class="screen" hidden>
+  <div class="awning thin"></div>
+  <div class="wrap bar">
+    <button class="icon-btn" id="homeBtn" aria-label="처음 화면으로">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#1e6a5a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>
+    </button>
+    <div class="title" id="stageTitle"></div>
+    <div class="dots" id="dots"></div>
+    <div class="stars">★ <b id="starCount">0</b></div>
+    <button class="icon-btn" id="soundBtn" aria-label="소리 켜기/끄기" aria-pressed="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#1e6a5a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></svg>
+    </button>
+  </div>
+  <main class="wrap" id="stage"></main>
+</section>
+
+<script>
+(() => {
+const COINS = {
+  10:  { mm: 18,   metal: "copper", word: "십원",   icon: "pagoda" },
+  50:  { mm: 21.6, metal: "silver", word: "오십원", icon: "rice" },
+  100: { mm: 24,   metal: "silver", word: "백원",   icon: "person" },
+  500: { mm: 26.5, metal: "silver", word: "오백원", icon: "crane" },
+};
+const VALUES = [10, 50, 100, 500];
+const INK = { copper: "#6b3216", silver: "#4b5259" };
+const EDGE = { copper: "#7d3d1f", silver: "#7b838a" };
+
+const STAGES = {
+  1: { title: "지갑 채우기", desc: "동전의 앞과 뒤, 이름과 값을 알아봐요.", ws: "학습지 5-1 · 동전의 단위 알기", pic: "👛" },
+  2: { title: "은행에서 바꾸기", desc: "같은 값이 되는 동전 묶음을 찾아 바꿔요.", ws: "학습지 5-2 · 동전의 값 비교하기", pic: "🏦" },
+  3: { title: "가게에서 사기", desc: "가격표를 보고 알맞은 동전을 내요.", ws: "학습지 5-3 · 물건과 교환할 수 있는 동전 찾기", pic: "🛒" },
+};
+
+const S = { level: "normal", sound: true, showSum: true, voice: "rec:sunhi", rate: 0.95, mode: "all", stage: 1, qs: [], qi: 0, stars: 0, wrong: 0, basket: [], busy: false, tray: [] };
+
+/* ---------- 저장(선택) ---------- */
+try {
+  const saved = JSON.parse(localStorage.getItem("narae-coin-shop") || "{}");
+  if (["easy", "normal", "hard"].includes(saved.level)) S.level = saved.level;
+  if (typeof saved.sound === "boolean") S.sound = saved.sound;
+  if (typeof saved.showSum === "boolean") S.showSum = saved.showSum;
+  if (saved.v === 2 && typeof saved.voice === "string" && saved.voice) S.voice = saved.voice;
+  if ([0.8, 0.95, 1.1].includes(saved.rate)) S.rate = saved.rate;
+} catch (e) {}
+function save() { try { localStorage.setItem("narae-coin-shop", JSON.stringify({ v: 2, level: S.level, sound: S.sound, showSum: S.showSum, voice: S.voice, rate: S.rate })); } catch (e) {} }
+
+/* ---------- 도우미 ---------- */
+const $ = (s) => document.querySelector(s);
+const shuffle = (a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const pick = (a) => a[Math.floor(Math.random() * a.length)];
+const sum = (a) => a.reduce((x, y) => x + y, 0);
+function korNum(n) {
+  const d = ["", "일", "이", "삼", "사", "오", "육", "칠", "팔", "구"];
+  const th = Math.floor(n / 1000) % 10, h = Math.floor(n / 100) % 10, t = Math.floor(n / 10) % 10, o = n % 10;
+  let s = "";
+  if (th) s += (th === 1 ? "" : d[th]) + "천";
+  if (h) s += (h === 1 ? "" : d[h]) + "백";
+  if (t) s += (t === 1 ? "" : d[t]) + "십";
+  if (o) s += d[o];
+  return s || "영";
+}
+const wonWord = (n) => korNum(n) + "원";
+const NATIVE = ["", "한", "두", "세", "네", "다섯", "여섯", "일곱", "여덟", "아홉"];
+const count = (n) => n === 20 ? "스무" : ({ 1: "열", 2: "스물" }[Math.floor(n / 10)] || "") + NATIVE[n % 10];
+const batchim = (w) => { const c = w.charCodeAt(w.length - 1) - 0xac00; return c >= 0 && c <= 11171 && c % 28 !== 0; };
+const eun = (w) => w + (batchim(w) ? "은" : "는");
+const eul = (w) => w + (batchim(w) ? "을" : "를");
+
+/* ---------- 동전 그림 ---------- */
+function face(v, side) {
+  const c = COINS[v], ink = INK[c.metal];
+  if (side === "back") {
+    const fs = v >= 100 ? 31 : 38;
+    return `<text x="50" y="29" text-anchor="middle" font-size="8.5" fill="${ink}" font-family="Gowun Dodum, sans-serif" opacity=".8">한국은행</text>
+      <text x="50" y="${v >= 100 ? 61 : 63}" text-anchor="middle" font-size="${fs}" fill="${ink}" font-family="Jua, sans-serif">${v}</text>
+      <text x="50" y="80" text-anchor="middle" font-size="8.5" fill="${ink}" font-family="Gowun Dodum, sans-serif" opacity=".8">2026</text>`;
+  }
+  const g = `fill="${ink}" opacity=".72"`;
+  switch (c.icon) {
+    case "pagoda": return `<g ${g}><rect x="34" y="71" width="32" height="5" rx="1"/><rect x="39" y="63" width="22" height="8"/><polygon points="31,63 69,63 61,56 39,56"/><rect x="42" y="48" width="16" height="8"/><polygon points="34,48 66,48 58,42 42,42"/><rect x="44.5" y="35" width="11" height="7"/><polygon points="37,35 63,35 56,30 44,30"/><rect x="48.5" y="17" width="3" height="13"/><circle cx="50" cy="20" r="2.6"/></g>`;
+    case "rice": {
+      let s = `<g ${g}><path d="M49 82 Q47 55 58 22" stroke="${ink}" stroke-width="2.6" fill="none"/><path d="M49 80 Q34 66 28 50 Q40 60 49 70Z"/>`;
+      [[57, 27], [54, 35], [52, 43], [50.5, 51], [49.5, 59]].forEach(([x, y]) => {
+        s += `<ellipse cx="${x - 5}" cy="${y}" rx="3" ry="5.4" transform="rotate(-28 ${x - 5} ${y})"/><ellipse cx="${x + 5}" cy="${y + 1}" rx="3" ry="5.4" transform="rotate(28 ${x + 5} ${y + 1})"/>`;
+      });
+      return s + `</g>`;
+    }
+    case "person": return `<g ${g}><circle cx="50" cy="27" r="4.2"/><circle cx="50" cy="41" r="11.5"/><path d="M25 80 Q27 58 50 55 Q73 58 75 80Z"/><path d="M44 57 L50 70 L56 57Z" fill="#fff" opacity=".35"/></g>`;
+    case "crane": return `<g ${g}><path d="M50 52 Q32 28 13 33 Q30 44 44 57Z"/><path d="M50 52 Q68 28 87 33 Q70 44 56 57Z"/><ellipse cx="50" cy="56" rx="9" ry="5.5"/><path d="M55 56 Q63 66 71 69" stroke="${ink}" stroke-width="3" fill="none"/><circle cx="72" cy="69.5" r="3"/><path d="M45 59 L33 76 M48 60 L39 78" stroke="${ink}" stroke-width="2" fill="none"/></g>`;
+  }
+}
+function coinSVG(v, side) {
+  const c = COINS[v];
+  return `<svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="48.5" fill="url(#m-${c.metal})" stroke="${EDGE[c.metal]}" stroke-width="2"/><circle cx="50" cy="50" r="41.5" fill="none" stroke="rgba(0,0,0,.16)" stroke-width="1.4"/>${face(v, side)}</svg>`;
+}
+function coinHTML(v, side = "back") {
+  return `<span class="coin" style="--d:${(COINS[v].mm / 26.5).toFixed(3)}" data-v="${v}" data-side="${side}">${coinSVG(v, side)}</span>`;
+}
+function flip(el, toSide) {
+  const side = toSide || (el.dataset.side === "front" ? "back" : "front");
+  el.classList.remove("flipping"); void el.offsetWidth; el.classList.add("flipping");
+  setTimeout(() => { el.innerHTML = coinSVG(+el.dataset.v, side); el.dataset.side = side; }, 160);
+}
+
+/* ---------- 소리 ---------- */
+let actx = null;
+function tone(freqs, dur = 0.16, type = "sine", vol = 0.18) {
+  if (!S.sound) return;
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === "suspended") actx.resume();
+    freqs.forEach((f, i) => {
+      const o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime + i * dur * 0.8;
+      o.type = type; o.frequency.value = f;
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + 0.01); g.gain.exponentialRampToValueAtTime(0.001, t + dur * 2);
+      o.connect(g).connect(actx.destination); o.start(t); o.stop(t + dur * 2 + 0.05);
+    });
+  } catch (e) {}
+}
+const ding = () => tone([1320, 1760], 0.12, "triangle", 0.16);
+const cheer = () => tone([784, 988, 1175, 1568], 0.13, "triangle", 0.15);
+const clink = () => tone([2093], 0.06, "triangle", 0.1);
+const soft = () => tone([330, 262], 0.14, "sine", 0.12);
+/* 자연스러운 목소리 우선: Edge의 Natural/Online(신경망) 음성, Google, Apple 순. 오래된 데스크톱 음성(Heami)은 뒤로 */
+function koVoices() {
+  try { return speechSynthesis.getVoices().filter((v) => v.lang && v.lang.toLowerCase().replace("_", "-").startsWith("ko")); } catch (e) { return []; }
+}
+function voiceScore(v) {
+  const n = v.name;
+  let s = 0;
+  if (/Natural|Neural|Online|Premium|Enhanced/i.test(n)) s += 10;
+  if (/SunHi|선히/i.test(n)) s += 3;
+  if (/Google|한국의/i.test(n)) s += 6;
+  if (/Yuna|유나|Sora|Jian/i.test(n)) s += 5;
+  if (/Heami/i.test(n)) s -= 5;
+  if (!v.localService) s += 1;
+  return s;
+}
+function currentVoice() {
+  const vs = koVoices();
+  if (!vs.length) return null;
+  return vs.find((v) => v.name === S.voice) || vs.slice().sort((a, b) => voiceScore(b) - voiceScore(a))[0];
+}
+/* 미리 녹음한 신경망 음성(선히·인준). 문장이 목록에 없으면 기기 음성으로 읽는다 */
+const CLIPS = {"지갑 채우기. 동전의 앞과 뒤, 이름과 값을 알아봐요.": "000", "은행에서 바꾸기. 같은 값이 되는 동전 묶음을 찾아 바꿔요.": "001", "가게에서 사기. 가격표를 보고 알맞은 동전을 내요.": "002", "이 동전의 뒷면을 찾아 눌러요": "003", "이 동전은 얼마일까요?": "004", "값이 더 큰 동전을 눌러요": "005", "값이 가장 큰 동전을 눌러요": "006", "오십원과 같은 값의 동전 묶음을 골라요": "007", "백원과 같은 값의 동전 묶음을 골라요": "008", "오백원과 같은 값의 동전 묶음을 골라요": "009", "십원": "010", "오십원": "011", "백원": "012", "오백원": "013", "맞아요! 십원": "014", "맞아요! 오십원": "015", "맞아요! 백원": "016", "맞아요! 오백원": "017", "맞아요! 오십원이 가장 커요": "018", "맞아요! 백원이 가장 커요": "019", "맞아요! 오백원이 가장 커요": "020", "십원 다섯 개는 오십원과 같아요": "021", "오십원 두 개는 백원과 같아요": "022", "백원 다섯 개는 오백원과 같아요": "023", "십원 열 개는 백원과 같아요": "024", "오십원 한 개, 십원 다섯 개는 백원과 같아요": "025", "백원 네 개, 오십원 두 개는 오백원과 같아요": "026", "백원 세 개, 오십원 네 개는 오백원과 같아요": "027", "다시 해 볼까요?": "028", "한 번 더 찾아봐요!": "029", "괜찮아요, 다시 해 봐요!": "030", "사탕은 십원이에요. 동전을 계산대에 놓아요": "031", "십원, 딱 맞아요! 사탕을 샀어요": "032", "막대사탕은 오십원이에요. 동전을 계산대에 놓아요": "033", "오십원, 딱 맞아요! 막대사탕을 샀어요": "034", "연필은 백원이에요. 동전을 계산대에 놓아요": "035", "백원, 딱 맞아요! 연필을 샀어요": "036", "공책은 오백원이에요. 동전을 계산대에 놓아요": "037", "오백원, 딱 맞아요! 공책을 샀어요": "038", "과자는 이백원이에요. 동전을 계산대에 놓아요": "039", "이백원, 딱 맞아요! 과자를 샀어요": "040", "주스는 삼백원이에요. 동전을 계산대에 놓아요": "041", "삼백원, 딱 맞아요! 주스를 샀어요": "042", "풍선은 사백원이에요. 동전을 계산대에 놓아요": "043", "사백원, 딱 맞아요! 풍선을 샀어요": "044", "사탕은 이십원이에요. 동전을 계산대에 놓아요": "045", "이십원, 딱 맞아요! 사탕을 샀어요": "046", "젤리는 삼십원이에요. 동전을 계산대에 놓아요": "047", "삼십원, 딱 맞아요! 젤리를 샀어요": "048", "아이스크림은 백오십원이에요. 동전을 계산대에 놓아요": "049", "백오십원, 딱 맞아요! 아이스크림을 샀어요": "050", "주먹밥은 칠백원이에요. 동전을 계산대에 놓아요": "051", "칠백원, 딱 맞아요! 주먹밥을 샀어요": "052", "바나나는 오백오십원이에요. 동전을 계산대에 놓아요": "053", "오백오십원, 딱 맞아요! 바나나를 샀어요": "054", "막대사탕은 육십원이에요. 동전을 계산대에 놓아요": "055", "육십원, 딱 맞아요! 막대사탕을 샀어요": "056", "자는 이백오십원이에요. 동전을 계산대에 놓아요": "057", "이백오십원, 딱 맞아요! 자를 샀어요": "058", "동전을 계산대에 놓아요": "059", "돈이 조금 모자라요. 동전을 더 놓아요": "060", "돈을 너무 많이 냈어요. 동전을 빼 봐요": "061", "정말 잘했어요! 별을 한 개 모았어요.": "062", "정말 잘했어요! 별을 두 개 모았어요.": "063", "정말 잘했어요! 별을 세 개 모았어요.": "064", "정말 잘했어요! 별을 네 개 모았어요.": "065", "정말 잘했어요! 별을 다섯 개 모았어요.": "066", "정말 잘했어요! 별을 여섯 개 모았어요.": "067", "정말 잘했어요! 별을 일곱 개 모았어요.": "068", "정말 잘했어요! 별을 여덟 개 모았어요.": "069", "정말 잘했어요! 별을 아홉 개 모았어요.": "070", "정말 잘했어요! 별을 열 개 모았어요.": "071", "정말 잘했어요! 별을 열한 개 모았어요.": "072", "정말 잘했어요! 별을 열두 개 모았어요.": "073", "정말 잘했어요! 별을 열세 개 모았어요.": "074", "정말 잘했어요! 별을 열네 개 모았어요.": "075", "정말 잘했어요! 별을 열다섯 개 모았어요.": "076", "정말 잘했어요! 별을 열여섯 개 모았어요.": "077", "정말 잘했어요! 별을 열일곱 개 모았어요.": "078", "정말 잘했어요! 별을 열여덟 개 모았어요.": "079", "정말 잘했어요! 별을 열아홉 개 모았어요.": "080", "정말 잘했어요! 별을 스무 개 모았어요.": "081", "이 빠르기로 읽어 줄게요": "082", "안녕하세요! 나래 동전 가게예요.": "083", "안녕하세요! 나래 동전 가게예요. 오백원으로 과자를 사 볼까요?": "084"};
+const REC = { "rec:sunhi": "선히 (자연스러운 녹음 목소리)", "rec:injoon": "인준 (자연스러운 녹음 목소리)" };
+const player = new Audio();
+player.preload = "auto";
+function stopVoice() {
+  try { player.pause(); } catch (e) {}
+  try { speechSynthesis.cancel(); } catch (e) {}
+}
+function fillVoices() {
+  const sel = $("#voiceSel"); if (!sel) return;
+  const vs = koVoices().sort((a, b) => voiceScore(b) - voiceScore(a));
+  let html = Object.entries(REC).map(([k, n]) => `<option value="${k}">⭐ ${n}</option>`).join("");
+  if (vs.length) html += `<optgroup label="이 기기의 목소리">` + vs.map((v) => `<option value="${v.name.replace(/"/g, "&quot;")}">${v.name.replace(/^Microsoft\s*/, "").replace(/\s*-\s*Korean.*$/i, "")}</option>`).join("") + `</optgroup>`;
+  sel.innerHTML = html;
+  if (!REC[S.voice] && !vs.some((v) => v.name === S.voice)) S.voice = "rec:sunhi";
+  sel.value = S.voice;
+  $("#voiceTip").textContent = REC[S.voice]
+    ? "녹음 목소리는 어느 기기에서나 똑같이 들려요."
+    : "기기 목소리는 기기와 브라우저마다 다르게 들려요.";
+}
+function say(text) {
+  if (!S.sound) return;
+  stopVoice();
+  if (REC[S.voice] && CLIPS[text]) {
+    try {
+      player.src = `audio/${S.voice.slice(4)}/${CLIPS[text]}.mp3`;
+      player.playbackRate = S.rate === 0.8 ? 0.85 : S.rate === 1.1 ? 1.12 : 1;
+      const p = player.play();
+      if (p && p.catch) p.catch(() => speakDevice(text));
+      return;
+    } catch (e) {}
+  }
+  speakDevice(text);
+}
+function speakDevice(text) {
+  if (!("speechSynthesis" in window)) return;
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = "ko-KR"; u.rate = S.rate; u.pitch = 1;
+    const v = REC[S.voice] ? currentVoice() : koVoices().find((x) => x.name === S.voice) || currentVoice();
+    if (v) u.voice = v;
+    speechSynthesis.speak(u);
+  } catch (e) {}
+}
+
+/* ---------- 말풍선·축하 ---------- */
+let fbTimer = null;
+function feedback(msg, kind, ms = 1500) {
+  document.querySelectorAll(".fb").forEach((n) => n.remove());
+  const el = document.createElement("div");
+  el.className = "fb " + kind; el.textContent = msg; el.setAttribute("role", "status");
+  document.body.appendChild(el);
+  clearTimeout(fbTimer); fbTimer = setTimeout(() => el.remove(), ms);
+}
+function confetti() {
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const cv = document.createElement("canvas"); cv.className = "confetti";
+  cv.width = innerWidth; cv.height = innerHeight; document.body.appendChild(cv);
+  const ctx = cv.getContext("2d"), cols = ["#f1b234", "#1e6a5a", "#d6473a", "#cf7d50", "#ccd2d7"];
+  const ps = Array.from({ length: 70 }, () => ({ x: innerWidth / 2, y: innerHeight * 0.55, vx: (Math.random() - 0.5) * 16, vy: -Math.random() * 16 - 6, r: 5 + Math.random() * 7, c: pick(cols) }));
+  let f = 0;
+  (function step() {
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    ps.forEach((p) => { p.vy += 0.5; p.x += p.vx; p.y += p.vy; ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 7); ctx.fill(); });
+    if (++f < 70) requestAnimationFrame(step); else cv.remove();
+  })();
+}
+
+/* ---------- 문제 만들기 ---------- */
+function genStage1() {
+  const L = S.level, qs = [];
+  shuffle(VALUES).forEach((v) => {
+    const others = shuffle(VALUES.filter((x) => x !== v));
+    qs.push({ type: "match", v, opts: shuffle(L === "easy" ? [v, others[0]] : VALUES) });
+  });
+  if (L !== "easy") {
+    shuffle(VALUES).slice(0, 2).forEach((v) => {
+      const others = shuffle(VALUES.filter((x) => x !== v));
+      qs.push({ type: "word", v, side: L === "hard" ? "front" : "back", opts: shuffle(L === "hard" ? VALUES : [v, others[0], others[1]]) });
+    });
+  }
+  for (let i = 0; i < 2; i++) {
+    qs.push({ type: "big", coins: shuffle(VALUES).slice(0, L === "easy" ? 2 : 3), side: L === "hard" ? "front" : "back" });
+  }
+  return qs;
+}
+const rep = (v, n) => Array(n).fill(v);
+const BANK = {
+  easy: [
+    { t: 50, ok: rep(10, 5), bad: [rep(10, 3)] },
+    { t: 100, ok: rep(50, 2), bad: [[50]] },
+    { t: 500, ok: rep(100, 5), bad: [rep(100, 3)] },
+  ],
+  normal: [
+    { t: 50, ok: rep(10, 5), bad: [rep(10, 4), rep(10, 6)] },
+    { t: 100, ok: rep(50, 2), bad: [[50, 10], rep(50, 3)] },
+    { t: 100, ok: rep(10, 10), bad: [rep(10, 8), [50, 10, 10]] },
+    { t: 500, ok: rep(100, 5), bad: [rep(100, 4), rep(100, 6)] },
+  ],
+  hard: [
+    { t: 100, ok: [50, 10, 10, 10, 10, 10], bad: [[50, 10, 10, 10], [50, 50, 10]] },
+    { t: 500, ok: [100, 100, 100, 100, 50, 50], bad: [[100, 100, 100, 50, 50], [100, 100, 100, 100, 50]] },
+    { t: 500, ok: [100, 100, 100, 50, 50, 50, 50], bad: [[100, 100, 100, 50, 50, 50], [100, 100, 100, 100, 50, 50, 50]] },
+    { t: 50, ok: rep(10, 5), bad: [rep(10, 4), [10, 10, 10, 10, 10, 10]] },
+    { t: 100, ok: rep(50, 2), bad: [[50, 10, 10, 10], [50, 50, 10]] },
+  ],
+};
+function genStage2() {
+  return shuffle(BANK[S.level]).map((q) => ({ type: "bank", t: q.t, opts: shuffle([q.ok, ...q.bad]) }));
+}
+const ITEMS = {
+  easy: [
+    { n: "사탕", e: "🍬", p: 10 }, { n: "막대사탕", e: "🍭", p: 50 },
+    { n: "연필", e: "✏️", p: 100 }, { n: "공책", e: "📒", p: 500 },
+  ],
+  normal: [
+    { n: "과자", e: "🍪", p: 200 }, { n: "주스", e: "🧃", p: 300 }, { n: "풍선", e: "🎈", p: 400 },
+    { n: "사탕", e: "🍬", p: 20 }, { n: "젤리", e: "🍡", p: 30 },
+  ],
+  hard: [
+    { n: "아이스크림", e: "🍦", p: 150 }, { n: "주먹밥", e: "🍙", p: 700 }, { n: "바나나", e: "🍌", p: 550 },
+    { n: "막대사탕", e: "🍭", p: 60 }, { n: "자", e: "📏", p: 250 },
+  ],
+};
+function genStage3() {
+  return shuffle(ITEMS[S.level]).slice(0, 4).map((it) => ({ type: "shop", ...it }));
+}
+
+/* ---------- 화면 전환 ---------- */
+function show(id) {
+  ["home", "play"].forEach((s) => ($("#" + s).hidden = s !== id));
+  document.querySelectorAll(".fb").forEach((n) => n.remove());
+  scrollTo(0, 0);
+}
+function updateBar() {
+  $("#stageTitle").textContent = `${S.stage}. ${STAGES[S.stage].title}`;
+  $("#starCount").textContent = S.stars;
+  $("#dots").innerHTML = S.qs.map((_, i) => `<i class="${i < S.qi ? "done" : i === S.qi ? "now" : ""}"></i>`).join("");
+  $("#soundBtn").setAttribute("aria-pressed", S.sound);
+}
+function startRun(mode) {
+  S.mode = mode; S.stars = 0; S.basket = [];
+  openIntro(mode === "all" ? 1 : mode, false);
+}
+function openIntro(stage, cheered) {
+  S.stage = stage; S.qs = []; S.qi = 0; S.busy = false;
+  show("play"); updateBar();
+  const st = STAGES[stage];
+  $("#stage").innerHTML = `<div class="intro">
+    ${cheered ? `<div class="cheer">잘했어요! 다음 가게로 가요.</div>` : ""}
+    <div class="pic">${st.pic}</div>
+    <h2>${stage}. ${st.title}</h2>
+    <p>${st.desc}</p>
+    <button class="big-btn" id="go">시작하기</button>
+    <div class="shelf-note">${st.ws}</div>
+  </div>`;
+  $("#go").onclick = beginStage;
+  say(`${st.title}. ${st.desc}`);
+}
+function beginStage() {
+  S.qs = S.stage === 1 ? genStage1() : S.stage === 2 ? genStage2() : genStage3();
+  S.qi = 0; renderQ();
+}
+function next() {
+  S.qi++;
+  if (S.qi < S.qs.length) renderQ();
+  else if (S.mode === "all" && S.stage < 3) openIntro(S.stage + 1, true);
+  else showEnd();
+}
+function showEnd() {
+  updateBar(); $("#dots").innerHTML = "";
+  const bought = S.basket.length
+    ? `<p>오늘 산 물건</p><div class="basket">${S.basket.map((b) => `<span title="${b.n}">${b.e}</span>`).join("")}</div>`
+    : `<div class="pic">🎉</div>`;
+  $("#stage").innerHTML = `<div class="intro">
+    <h2>오늘 놀이 끝!</h2>
+    <div class="stars" style="font-size:1.8em">★ <b>${S.stars}</b></div>
+    ${bought}
+    <div class="end-btns"><button class="big-btn" id="again">다시 하기</button><button class="small-btn" id="toHome">처음 화면</button></div>
+  </div>`;
+  $("#again").onclick = () => startRun(S.mode);
+  $("#toHome").onclick = goHome;
+  cheer(); confetti();
+  say(`정말 잘했어요! 별을 ${count(S.stars)} 개 모았어요.`);
+}
+function goHome() { stopVoice(); show("home"); }
+
+/* ---------- 문제 화면 ---------- */
+function promptHTML(text) {
+  return `<div class="prompt"><span>${text}</span><button class="icon-btn listen" aria-label="다시 듣기" data-listen>
+    <svg viewBox="0 0 24 24" fill="none" stroke="#1e6a5a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/></svg></button></div>`;
+}
+function bindListen(spoken) {
+  const b = document.querySelector("[data-listen]");
+  if (b) b.onclick = () => say(spoken);
+  say(spoken);
+}
+function renderQ() {
+  S.wrong = 0; S.busy = false; updateBar();
+  const q = S.qs[S.qi], st = $("#stage");
+  if (q.type === "match") {
+    const t = "이 동전의 뒷면을 찾아 눌러요";
+    st.innerHTML = promptHTML(t) + `<div class="q-row">
+      <div class="hero"><div id="heroCoin">${coinHTML(q.v, "front")}</div><div class="cap">앞면</div></div>
+      <div class="arrow">→</div>
+      <div class="opts">${q.opts.map((v) => `<button class="opt" data-v="${v}" ${v === q.v ? "data-right" : ""} aria-label="${COINS[v].word} 뒷면">${coinHTML(v, "back")}</button>`).join("")}</div></div>`;
+    bindOpts((v) => v === q.v, () => { flip($("#heroCoin .coin"), "back"); return [`${COINS[q.v].word}이에요!`, `맞아요! ${COINS[q.v].word}`]; });
+    bindListen(t);
+  } else if (q.type === "word") {
+    const t = "이 동전은 얼마일까요?";
+    st.innerHTML = promptHTML(t) + `<div class="q-row">
+      <div class="hero"><div id="heroCoin">${coinHTML(q.v, q.side)}</div></div>
+      <div class="opts">${q.opts.map((v) => `<button class="opt word" data-v="${v}" ${v === q.v ? "data-right" : ""}>${COINS[v].word}</button>`).join("")}</div></div>`;
+    bindOpts((v) => v === q.v, () => { if (q.side === "front") flip($("#heroCoin .coin"), "back"); return [`${COINS[q.v].word}, ${q.v}원!`, `맞아요! ${COINS[q.v].word}`]; });
+    bindListen(t);
+  } else if (q.type === "big") {
+    const max = Math.max(...q.coins);
+    const t = q.coins.length === 2 ? "값이 더 큰 동전을 눌러요" : "값이 가장 큰 동전을 눌러요";
+    st.innerHTML = promptHTML(t) + `<div class="q-row"><div class="opts">${q.coins.map((v) => `<button class="opt" data-v="${v}" ${v === max ? "data-right" : ""} aria-label="동전">${coinHTML(v, q.side)}</button>`).join("")}</div></div>`;
+    bindOpts((v) => v === max, () => {
+      if (q.side === "front") document.querySelectorAll(".opt .coin").forEach((c) => flip(c, "back"));
+      return [`${COINS[max].word}이 제일 커요!`, `맞아요! ${COINS[max].word}이 가장 커요`];
+    });
+    bindListen(t);
+  } else if (q.type === "bank") {
+    const t = `${COINS[q.t].word}과 같은 값의 동전 묶음을 골라요`;
+    st.innerHTML = promptHTML(t) + `<div class="q-row">
+      <div class="hero"><div>${coinHTML(q.t, "back")}</div><div class="cap">${COINS[q.t].word}을 바꿔요</div></div>
+      <div class="arrow">=</div>
+      <div class="opts">${q.opts.map((b, i) => `<button class="opt" data-i="${i}" ${sum(b) === q.t ? "data-right" : ""} aria-label="동전 ${b.length}개 묶음"><div class="bundle">${b.map((v) => coinHTML(v, "back")).join("")}</div></button>`).join("")}</div></div>`;
+    bindOpts((_, btn) => sum(q.opts[+btn.dataset.i]) === q.t, (btn) => {
+      const b = q.opts[+btn.dataset.i];
+      const parts = VALUES.slice().reverse().map((v) => [v, b.filter((x) => x === v).length]).filter(([, n]) => n);
+      const spoken = parts.map(([v, n]) => `${COINS[v].word} ${count(n)} 개`).join(", ");
+      return [`맞아요! 같은 값이에요`, `${spoken}는 ${COINS[q.t].word}과 같아요`];
+    });
+    bindListen(t);
+  } else if (q.type === "shop") {
+    renderShop(q);
+  }
+}
+function bindOpts(isRight, onRight) {
+  document.querySelectorAll(".opts .opt").forEach((btn) => {
+    btn.onclick = () => {
+      if (S.busy) return;
+      const ok = isRight(+btn.dataset.v, btn);
+      if (ok) {
+        S.busy = true; btn.classList.add("right"); btn.classList.remove("hint");
+        const [msg, spoken] = onRight(btn);
+        S.stars++; updateBar(); ding(); say(spoken); feedback(msg, "ok", 1800);
+        setTimeout(next, 2100);
+      } else {
+        wrongAnswer(btn);
+      }
+    };
+  });
+}
+function wrongAnswer(btn) {
+  S.wrong++;
+  if (btn) { btn.classList.remove("shake"); void btn.offsetWidth; btn.classList.add("shake"); }
+  soft();
+  const msg = pick(["다시 해 볼까요?", "한 번 더 찾아봐요!", "괜찮아요, 다시 해 봐요!"]);
+  feedback(msg, "try", 1400); say(msg);
+  if (S.wrong >= 2) document.querySelector("[data-right]")?.classList.add("hint");
+}
+
+/* ---------- 가게 ---------- */
+function renderShop(q) {
+  S.tray = [];
+  const t = `${eun(q.n)} ${wonWord(q.p)}이에요. 동전을 계산대에 놓아요`;
+  $("#stage").innerHTML = promptHTML(`${eul(q.n)} 사요`) + `<div class="shop">
+    <div class="item-card"><div class="em" aria-hidden="true">${q.e}</div><div class="nm">${q.n}</div><div class="tag">${q.p}원</div></div>
+    <div class="counter">
+      <div class="tray" id="tray"><span class="tray-label">계산대</span><div class="tray-coins" id="trayCoins"></div></div>
+      <div class="pay-row">
+        <div class="sum" id="sumBox">낸 돈 <b id="sumVal">0원</b></div>
+        <div class="pay-btns"><button class="small-btn" id="clearBtn">모두 빼기</button><button class="big-btn" id="payBtn">계산하기</button></div>
+      </div>
+    </div>
+    <div class="bank"><div class="lab">지갑 · 동전을 누르거나 계산대로 끌어 놓아요</div>
+      ${VALUES.map((v) => `<button class="bank-coin" data-v="${v}" aria-label="${COINS[v].word} 내기">${coinHTML(v, "back")}<span class="w">${COINS[v].word}</span></button>`).join("")}
+    </div></div>`;
+  drawTray();
+  document.querySelectorAll(".bank-coin").forEach((b) => enableBankCoin(b, +b.dataset.v));
+  $("#clearBtn").onclick = () => { S.tray = []; drawTray(); };
+  $("#payBtn").onclick = () => pay(q);
+  bindListen(t);
+}
+function drawTray() {
+  const box = $("#trayCoins");
+  box.innerHTML = S.tray.length
+    ? S.tray.map((v, i) => `<button data-i="${i}" aria-label="${COINS[v].word} 빼기">${coinHTML(v, "back")}</button>`).join("")
+    : `<div class="tray-empty">여기에 동전을 놓아요</div>`;
+  box.querySelectorAll("button").forEach((b) => (b.onclick = () => { S.tray.splice(+b.dataset.i, 1); drawTray(); }));
+  $("#sumVal").textContent = sum(S.tray) + "원";
+  $("#sumBox").style.visibility = S.showSum || S.wrong >= 2 ? "visible" : "hidden";
+}
+function addToTray(v) {
+  if (S.busy) return;
+  if (S.tray.length >= 14) { feedback("계산대가 가득 찼어요", "try", 1200); return; }
+  S.tray.push(v); clink(); drawTray();
+  if (S.sound) say(COINS[v].word);
+}
+function enableBankCoin(btn, v) {
+  let suppress = false;
+  btn.addEventListener("click", () => { if (suppress) { suppress = false; return; } addToTray(v); });
+  btn.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0) return;
+    const sx = e.clientX, sy = e.clientY; let ghost = null;
+    try { btn.setPointerCapture(e.pointerId); } catch (_) {}
+    const tray = $("#tray");
+    const over = (ev) => { const r = tray.getBoundingClientRect(); return ev.clientX > r.left && ev.clientX < r.right && ev.clientY > r.top && ev.clientY < r.bottom; };
+    const move = (ev) => {
+      if (!ghost && Math.hypot(ev.clientX - sx, ev.clientY - sy) > 12) {
+        ghost = document.createElement("div"); ghost.className = "ghost"; ghost.innerHTML = coinHTML(v, "back"); document.body.appendChild(ghost);
+      }
+      if (ghost) { ghost.style.left = ev.clientX + "px"; ghost.style.top = ev.clientY + "px"; tray.classList.toggle("over", over(ev)); }
+    };
+    const up = (ev) => {
+      btn.removeEventListener("pointermove", move); btn.removeEventListener("pointerup", up); btn.removeEventListener("pointercancel", up);
+      if (ghost) { ghost.remove(); tray.classList.remove("over"); suppress = true; setTimeout(() => (suppress = false), 400); if (ev.type === "pointerup" && over(ev)) addToTray(v); }
+    };
+    btn.addEventListener("pointermove", move); btn.addEventListener("pointerup", up); btn.addEventListener("pointercancel", up);
+  });
+}
+function pay(q) {
+  if (S.busy) return;
+  const s = sum(S.tray);
+  if (!S.tray.length) { feedback("동전을 계산대에 놓아요", "try", 1400); say("동전을 계산대에 놓아요"); return; }
+  if (s === q.p) {
+    S.busy = true; S.stars++; S.basket.push({ n: q.n, e: q.e }); updateBar();
+    $("#sumBox").style.visibility = "visible";
+    cheer(); confetti();
+    feedback(`${eul(q.n)} 샀어요!`, "ok", 1900);
+    say(`${wonWord(q.p)}, 딱 맞아요! ${eul(q.n)} 샀어요`);
+    setTimeout(next, 2300);
+    return;
+  }
+  S.wrong++; soft();
+  const tray = $("#tray"); tray.classList.remove("shake"); void tray.offsetWidth; tray.classList.add("shake");
+  const msg = s < q.p ? "돈이 조금 모자라요. 동전을 더 놓아요" : "돈을 너무 많이 냈어요. 동전을 빼 봐요";
+  feedback(s < q.p ? "조금 모자라요!" : "너무 많이 냈어요!", "try", 1700);
+  say(msg);
+  if (S.wrong >= 2) $("#sumBox").style.visibility = "visible";
+}
+
+/* ---------- 홈 ---------- */
+function renderHome() {
+  $("#shelf").innerHTML = VALUES.map((v) => `<button class="shelf-coin" data-v="${v}" aria-label="${COINS[v].word} 뒤집기">${coinHTML(v, "front")}<span class="w">${COINS[v].word}</span></button>`).join("");
+  document.querySelectorAll(".shelf-coin").forEach((b) => (b.onclick = () => { flip(b.querySelector(".coin")); clink(); say(COINS[+b.dataset.v].word); }));
+  $("#stageCards").innerHTML = [1, 2, 3].map((n) => `<button class="stage-card" data-s="${n}"><span class="no">${n}</span><span class="t">${STAGES[n].pic} ${STAGES[n].title}</span><span class="d">${STAGES[n].desc}</span><span class="ws">${STAGES[n].ws}</span></button>`).join("");
+  document.querySelectorAll(".stage-card").forEach((b) => (b.onclick = () => startRun(+b.dataset.s)));
+  syncSettings();
+}
+function syncSettings() {
+  document.querySelectorAll("#levelSeg button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.level === S.level));
+  $("#togSound").setAttribute("aria-pressed", S.sound);
+  $("#togSum").setAttribute("aria-pressed", S.showSum);
+  $("#soundBtn").setAttribute("aria-pressed", S.sound);
+  document.querySelectorAll("#rateSeg button").forEach((b) => b.setAttribute("aria-pressed", +b.dataset.rate === S.rate));
+}
+document.querySelectorAll("#rateSeg button").forEach((b) => (b.onclick = () => { S.rate = +b.dataset.rate; save(); syncSettings(); say("이 빠르기로 읽어 줄게요"); }));
+$("#voiceSel").onchange = (e) => { S.voice = e.target.value; save(); fillVoices(); say("안녕하세요! 나래 동전 가게예요."); };
+$("#voiceTest").onclick = () => { if (!S.sound) { S.sound = true; save(); syncSettings(); } say("안녕하세요! 나래 동전 가게예요. 오백원으로 과자를 사 볼까요?"); };
+document.querySelectorAll("#levelSeg button").forEach((b) => (b.onclick = () => { S.level = b.dataset.level; save(); syncSettings(); }));
+$("#togSound").onclick = () => { S.sound = !S.sound; save(); syncSettings(); if (S.sound) ding(); };
+$("#togSum").onclick = () => { S.showSum = !S.showSum; save(); syncSettings(); };
+$("#soundBtn").onclick = () => { S.sound = !S.sound; if (!S.sound) stopVoice(); save(); syncSettings(); };
+$("#startAll").onclick = () => startRun("all");
+$("#homeBtn").onclick = goHome;
+$("#fullBtn").onclick = () => {
+  const d = document.documentElement;
+  try {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else (d.requestFullscreen || d.webkitRequestFullscreen).call(d)?.catch?.(() => feedback("이 화면에서는 전체 화면을 쓸 수 없어요", "try"));
+  } catch (e) { feedback("이 화면에서는 전체 화면을 쓸 수 없어요", "try"); }
+};
+try { speechSynthesis.getVoices(); speechSynthesis.addEventListener("voiceschanged", fillVoices); } catch (e) {}
+fillVoices(); setTimeout(fillVoices, 800);
+renderHome();
+})();
+</script>
+</body>
+</html>
