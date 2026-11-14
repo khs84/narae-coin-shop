@@ -212,6 +212,7 @@ button:focus-visible { outline: 4px solid var(--gold); outline-offset: 3px; }
     <div class="splash-coins" aria-hidden="true" id="splashCoins"></div>
     <button class="big-btn" id="openShop">가게 문 열기 ▶</button>
     <div class="shelf-note">누르면 음악과 함께 시작해요</div>
+    <div class="shelf-note" style="opacity:.6">버전 7</div>
   </div>
 </div>
 
@@ -378,7 +379,7 @@ function tone(freqs, dur = 0.16, type = "sine", vol = 0.18) {
   } catch (e) {}
 }
 /* ---------- 배경음악: 직접 만든 밝은 8마디 반복곡(C-Am-F-G), 마림바풍 ---------- */
-const BPM = 112, STEP = 60 / BPM / 2, MUSIC_VOL = 0.07;
+const BPM = 112, STEP = 60 / BPM / 2, MUSIC_VOL = 0.34, DUCK = 0.45;
 const MEL = [
   72, 76, 79, 76, 84, 0, 79, 0,   81, 0, 79, 76, 72, 0, 0, 0,
   77, 81, 84, 81, 79, 0, 77, 0,   79, 0, 77, 74, 71, 0, 74, 0,
@@ -423,8 +424,9 @@ function musicStart() {
   try {
     ctx();
     M.bus = actx.createGain(); M.bus.connect(actx.destination);
+    M.meter = actx.createAnalyser(); M.meter.fftSize = 1024; M.bus.connect(M.meter);
     M.bus.gain.setValueAtTime(0, actx.currentTime);
-    M.bus.gain.linearRampToValueAtTime(M.ducked ? MUSIC_VOL * 0.3 : MUSIC_VOL, actx.currentTime + 0.8);
+    M.bus.gain.linearRampToValueAtTime(M.ducked ? MUSIC_VOL * DUCK : MUSIC_VOL, actx.currentTime + 0.4);
     M.next = actx.currentTime + 0.1;
     M.timer = setInterval(() => {
       while (M.next < actx.currentTime + 0.15) { playStep(M.step, M.next); M.next += STEP; M.step = (M.step + 1) % MEL.length; }
@@ -438,7 +440,7 @@ function musicStop() {
 }
 function duck(on) {
   M.ducked = on;
-  if (M.bus) { try { M.bus.gain.cancelScheduledValues(actx.currentTime); M.bus.gain.setTargetAtTime(on ? MUSIC_VOL * 0.3 : MUSIC_VOL, actx.currentTime, 0.12); } catch (e) {} }
+  if (M.bus) { try { M.bus.gain.cancelScheduledValues(actx.currentTime); M.bus.gain.setTargetAtTime(on ? MUSIC_VOL * DUCK : MUSIC_VOL, actx.currentTime, 0.12); } catch (e) {} }
 }
 document.addEventListener("visibilitychange", () => { if (document.hidden) musicStop(); else musicStart(); });
 /* 터치 기기는 손가락을 뗄 때(pointerup·touchend·click)만 오디오 잠금이 풀린다. 모든 입력에서 잠금 해제를 다시 시도 */
@@ -861,7 +863,11 @@ $("#fullBtn").onclick = () => {
 };
 try { speechSynthesis.getVoices(); speechSynthesis.addEventListener("voiceschanged", fillVoices); } catch (e) {}
 fillVoices(); setTimeout(fillVoices, 800);
-window.naraeAudio = () => ({ context: actx ? actx.state : "none", music: !!M.timer, musicOn: S.music });
+window.naraeAudio = () => {
+  let peak = 0;
+  if (M.meter) { const d = new Float32Array(M.meter.fftSize); M.meter.getFloatTimeDomainData(d); d.forEach((x) => (peak = Math.max(peak, Math.abs(x)))); }
+  return { context: actx ? actx.state : "none", music: !!M.timer, musicOn: S.music, gain: M.bus ? +M.bus.gain.value.toFixed(3) : 0, peak: +peak.toFixed(3) };
+};
 $("#splashCoins").innerHTML = VALUES.map((v) => coinHTML(v, "back")).join("");
 $("#openShop").onclick = () => {
   unlockAudio();
