@@ -170,6 +170,14 @@ button:focus-visible { outline: 4px solid var(--gold); outline-offset: 3px; }
 .fb.ok { background: var(--ok-soft); border-color: var(--ok); color: #155c37; }
 .fb.try { background: var(--try-soft); border-color: var(--try); color: #7a3b10; }
 @keyframes pop { from { transform: translateX(-50%) scale(.7); opacity: 0; } }
+.splash { position: fixed; inset: 0; z-index: 60; background: var(--bg); display: flex; flex-direction: column; overflow-y: auto; }
+.splash-card { margin: auto; display: grid; justify-items: center; gap: clamp(16px, 3.5vmin, 32px); text-align: center; padding-block: 40px; }
+.splash-coins { display: flex; gap: clamp(10px, 2.5vmin, 24px); align-items: flex-end; }
+.splash-coins .coin { animation: bob 1.6s ease-in-out infinite; }
+.splash-coins .coin:nth-child(2) { animation-delay: .2s; } .splash-coins .coin:nth-child(3) { animation-delay: .4s; } .splash-coins .coin:nth-child(4) { animation-delay: .6s; }
+@keyframes bob { 50% { transform: translateY(-12px); } }
+#openShop { font-size: clamp(30px, 6vmin, 56px); animation: pulse 1.8s ease-in-out infinite; }
+@keyframes pulse { 50% { transform: scale(1.05); } }
 .confetti { position: fixed; inset: 0; pointer-events: none; z-index: 45; }
 
 @media (max-width: 700px) {
@@ -195,6 +203,17 @@ button:focus-visible { outline: 4px solid var(--gold); outline-offset: 3px; }
     </radialGradient>
   </defs>
 </svg>
+
+<!-- 시작 화면: 브라우저는 사용자가 한 번 누르기 전에는 소리를 막으므로, 여기서 음악을 연다 -->
+<div id="splash" class="splash">
+  <div class="awning"></div>
+  <div class="splash-card wrap">
+    <div class="sign">나래 동전 가게</div>
+    <div class="splash-coins" aria-hidden="true" id="splashCoins"></div>
+    <button class="big-btn" id="openShop">가게 문 열기 ▶</button>
+    <div class="shelf-note">누르면 음악과 함께 시작해요</div>
+  </div>
+</div>
 
 <!-- 홈 -->
 <section id="home" class="screen">
@@ -403,7 +422,8 @@ function musicStart() {
   if (!S.music || M.timer || document.hidden) return;
   try {
     ctx();
-    M.bus = actx.createGain(); M.bus.gain.value = 0; M.bus.connect(actx.destination);
+    M.bus = actx.createGain(); M.bus.connect(actx.destination);
+    M.bus.gain.setValueAtTime(0, actx.currentTime);
     M.bus.gain.linearRampToValueAtTime(M.ducked ? MUSIC_VOL * 0.3 : MUSIC_VOL, actx.currentTime + 0.8);
     M.next = actx.currentTime + 0.1;
     M.timer = setInterval(() => {
@@ -421,8 +441,12 @@ function duck(on) {
   if (M.bus) { try { M.bus.gain.cancelScheduledValues(actx.currentTime); M.bus.gain.setTargetAtTime(on ? MUSIC_VOL * 0.3 : MUSIC_VOL, actx.currentTime, 0.12); } catch (e) {} }
 }
 document.addEventListener("visibilitychange", () => { if (document.hidden) musicStop(); else musicStart(); });
-document.addEventListener("pointerdown", () => musicStart(), { capture: true });
-document.addEventListener("keydown", () => musicStart(), { capture: true });
+/* 터치 기기는 손가락을 뗄 때(pointerup·touchend·click)만 오디오 잠금이 풀린다. 모든 입력에서 잠금 해제를 다시 시도 */
+function unlockAudio() {
+  try { ctx(); } catch (e) {}
+  musicStart();
+}
+["pointerdown", "pointerup", "touchend", "click", "keydown"].forEach((ev) => document.addEventListener(ev, unlockAudio, { capture: true, passive: true }));
 const ding = () => tone([1320, 1760], 0.12, "triangle", 0.16);
 const cheer = () => tone([784, 988, 1175, 1568], 0.13, "triangle", 0.15);
 const clink = () => tone([2093], 0.06, "triangle", 0.1);
@@ -837,6 +861,13 @@ $("#fullBtn").onclick = () => {
 };
 try { speechSynthesis.getVoices(); speechSynthesis.addEventListener("voiceschanged", fillVoices); } catch (e) {}
 fillVoices(); setTimeout(fillVoices, 800);
+window.naraeAudio = () => ({ context: actx ? actx.state : "none", music: !!M.timer, musicOn: S.music });
+$("#splashCoins").innerHTML = VALUES.map((v) => coinHTML(v, "back")).join("");
+$("#openShop").onclick = () => {
+  unlockAudio();
+  $("#splash").hidden = true;
+  say("안녕하세요! 나래 동전 가게예요.");
+};
 renderHome();
 })();
 </script>
