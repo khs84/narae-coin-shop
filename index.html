@@ -215,6 +215,7 @@ button:focus-visible { outline: 4px solid var(--gold); outline-offset: 3px; }
         <button data-level="hard" aria-pressed="false">어려움</button>
       </div>
       <button class="tog" id="togSound" aria-pressed="true"><span class="sw"></span>소리·읽어 주기</button>
+      <button class="tog" id="togMusic" aria-pressed="true"><span class="sw"></span>배경음악</button>
       <button class="tog" id="togSum" aria-pressed="true"><span class="sw"></span>가게에서 낸 돈 합계 보기</button>
       <button class="small-btn" id="fullBtn">전체 화면</button>
       <div class="voice-row">
@@ -242,6 +243,9 @@ button:focus-visible { outline: 4px solid var(--gold); outline-offset: 3px; }
     <div class="title" id="stageTitle"></div>
     <div class="dots" id="dots"></div>
     <div class="stars">★ <b id="starCount">0</b></div>
+    <button class="icon-btn" id="musicBtn" aria-label="배경음악 켜기/끄기" aria-pressed="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#1e6a5a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l11-2v13"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/></svg>
+    </button>
     <button class="icon-btn" id="soundBtn" aria-label="소리 켜기/끄기" aria-pressed="true">
       <svg viewBox="0 0 24 24" fill="none" stroke="#1e6a5a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></svg>
     </button>
@@ -267,7 +271,7 @@ const STAGES = {
   3: { title: "가게에서 사기", desc: "가격표를 보고 알맞은 동전을 내요.", ws: "학습지 5-3 · 물건과 교환할 수 있는 동전 찾기", pic: "🛒" },
 };
 
-const S = { level: "normal", sound: true, showSum: true, voice: "rec:sunhi", rate: 0.95, mode: "all", stage: 1, qs: [], qi: 0, stars: 0, wrong: 0, basket: [], busy: false, tray: [] };
+const S = { level: "normal", sound: true, music: true, showSum: true, voice: "rec:sunhi", rate: 0.95, mode: "all", stage: 1, qs: [], qi: 0, stars: 0, wrong: 0, basket: [], busy: false, tray: [] };
 
 /* ---------- 저장(선택) ---------- */
 try {
@@ -275,10 +279,11 @@ try {
   if (["easy", "normal", "hard"].includes(saved.level)) S.level = saved.level;
   if (typeof saved.sound === "boolean") S.sound = saved.sound;
   if (typeof saved.showSum === "boolean") S.showSum = saved.showSum;
+  if (typeof saved.music === "boolean") S.music = saved.music;
   if (saved.v === 2 && typeof saved.voice === "string" && saved.voice) S.voice = saved.voice;
   if ([0.8, 0.95, 1.1].includes(saved.rate)) S.rate = saved.rate;
 } catch (e) {}
-function save() { try { localStorage.setItem("narae-coin-shop", JSON.stringify({ v: 2, level: S.level, sound: S.sound, showSum: S.showSum, voice: S.voice, rate: S.rate })); } catch (e) {} }
+function save() { try { localStorage.setItem("narae-coin-shop", JSON.stringify({ v: 2, level: S.level, sound: S.sound, music: S.music, showSum: S.showSum, voice: S.voice, rate: S.rate })); } catch (e) {} }
 
 /* ---------- 도우미 ---------- */
 const $ = (s) => document.querySelector(s);
@@ -353,6 +358,71 @@ function tone(freqs, dur = 0.16, type = "sine", vol = 0.18) {
     });
   } catch (e) {}
 }
+/* ---------- 배경음악: 직접 만든 밝은 8마디 반복곡(C-Am-F-G), 마림바풍 ---------- */
+const BPM = 112, STEP = 60 / BPM / 2, MUSIC_VOL = 0.07;
+const MEL = [
+  72, 76, 79, 76, 84, 0, 79, 0,   81, 0, 79, 76, 72, 0, 0, 0,
+  77, 81, 84, 81, 79, 0, 77, 0,   79, 0, 77, 74, 71, 0, 74, 0,
+  72, 76, 79, 76, 84, 0, 86, 0,   84, 0, 81, 79, 76, 0, 79, 0,
+  77, 0, 81, 0, 79, 77, 76, 74,   74, 0, 71, 0, 74, 76, 79, 0,
+];
+const CHORDS = [[48, 55, [60, 64, 67]], [45, 52, [57, 60, 64]], [41, 48, [57, 60, 65]], [43, 50, [55, 59, 62]]];
+const mtof = (m) => 440 * Math.pow(2, (m - 69) / 12);
+const M = { timer: null, bus: null, step: 0, next: 0, noise: null, ducked: false };
+function ctx() {
+  actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+  if (actx.state === "suspended") actx.resume();
+  return actx;
+}
+function note(freq, t, dur, type, vol, dest) {
+  const o = actx.createOscillator(), g = actx.createGain();
+  o.type = type; o.frequency.value = freq;
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + 0.008); g.gain.exponentialRampToValueAtTime(0.0008, t + dur);
+  o.connect(g).connect(dest); o.start(t); o.stop(t + dur + 0.05);
+}
+function hat(t, vol) {
+  if (!M.noise) {
+    M.noise = actx.createBuffer(1, actx.sampleRate * 0.05, actx.sampleRate);
+    const d = M.noise.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  }
+  const s = actx.createBufferSource(), f = actx.createBiquadFilter(), g = actx.createGain();
+  s.buffer = M.noise; f.type = "highpass"; f.frequency.value = 7000;
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0005, t + 0.04);
+  s.connect(f).connect(g).connect(M.bus); s.start(t);
+}
+function playStep(i, t) {
+  const [root, fifth, triad] = CHORDS[Math.floor(i / 8) % 4];
+  const k = i % 8, m = MEL[i];
+  if (m) { note(mtof(m), t, 0.42, "triangle", 0.5, M.bus); note(mtof(m) * 4, t, 0.08, "sine", 0.06, M.bus); }
+  if (k === 0) note(mtof(root), t, 0.5, "sine", 0.75, M.bus);
+  if (k === 4) note(mtof(fifth), t, 0.4, "sine", 0.6, M.bus);
+  if (k === 2 || k === 6) triad.forEach((n) => note(mtof(n), t, 0.16, "sine", 0.09, M.bus));
+  hat(t, k % 2 ? 0.12 : 0.05);
+}
+function musicStart() {
+  if (!S.music || M.timer || document.hidden) return;
+  try {
+    ctx();
+    M.bus = actx.createGain(); M.bus.gain.value = 0; M.bus.connect(actx.destination);
+    M.bus.gain.linearRampToValueAtTime(M.ducked ? MUSIC_VOL * 0.3 : MUSIC_VOL, actx.currentTime + 0.8);
+    M.next = actx.currentTime + 0.1;
+    M.timer = setInterval(() => {
+      while (M.next < actx.currentTime + 0.15) { playStep(M.step, M.next); M.next += STEP; M.step = (M.step + 1) % MEL.length; }
+    }, 30);
+  } catch (e) {}
+}
+function musicStop() {
+  clearInterval(M.timer); M.timer = null;
+  const bus = M.bus; M.bus = null;
+  if (bus) { try { bus.gain.cancelScheduledValues(actx.currentTime); bus.gain.setTargetAtTime(0, actx.currentTime, 0.1); setTimeout(() => bus.disconnect(), 600); } catch (e) {} }
+}
+function duck(on) {
+  M.ducked = on;
+  if (M.bus) { try { M.bus.gain.cancelScheduledValues(actx.currentTime); M.bus.gain.setTargetAtTime(on ? MUSIC_VOL * 0.3 : MUSIC_VOL, actx.currentTime, 0.12); } catch (e) {} }
+}
+document.addEventListener("visibilitychange", () => { if (document.hidden) musicStop(); else musicStart(); });
+document.addEventListener("pointerdown", () => musicStart(), { capture: true });
+document.addEventListener("keydown", () => musicStart(), { capture: true });
 const ding = () => tone([1320, 1760], 0.12, "triangle", 0.16);
 const cheer = () => tone([784, 988, 1175, 1568], 0.13, "triangle", 0.15);
 const clink = () => tone([2093], 0.06, "triangle", 0.1);
@@ -382,6 +452,8 @@ const CLIPS = {"지갑 채우기. 동전의 앞과 뒤, 이름과 값을 알아�
 const REC = { "rec:sunhi": "선히 (자연스러운 녹음 목소리)", "rec:injoon": "인준 (자연스러운 녹음 목소리)" };
 const player = new Audio();
 player.preload = "auto";
+player.addEventListener("playing", () => duck(true));
+["ended", "pause", "error"].forEach((ev) => player.addEventListener(ev, () => duck(false)));
 function stopVoice() {
   try { player.pause(); } catch (e) {}
   try { speechSynthesis.cancel(); } catch (e) {}
@@ -420,6 +492,8 @@ function speakDevice(text) {
     u.lang = "ko-KR"; u.rate = S.rate; u.pitch = 1;
     const v = REC[S.voice] ? currentVoice() : koVoices().find((x) => x.name === S.voice) || currentVoice();
     if (v) u.voice = v;
+    u.onstart = () => duck(true);
+    u.onend = u.onerror = () => duck(false);
     speechSynthesis.speak(u);
   } catch (e) {}
 }
@@ -737,6 +811,8 @@ function syncSettings() {
   document.querySelectorAll("#levelSeg button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.level === S.level));
   $("#togSound").setAttribute("aria-pressed", S.sound);
   $("#togSum").setAttribute("aria-pressed", S.showSum);
+  $("#togMusic").setAttribute("aria-pressed", S.music);
+  $("#musicBtn").setAttribute("aria-pressed", S.music);
   $("#soundBtn").setAttribute("aria-pressed", S.sound);
   document.querySelectorAll("#rateSeg button").forEach((b) => b.setAttribute("aria-pressed", +b.dataset.rate === S.rate));
 }
@@ -745,6 +821,9 @@ $("#voiceSel").onchange = (e) => { S.voice = e.target.value; save(); fillVoices(
 $("#voiceTest").onclick = () => { if (!S.sound) { S.sound = true; save(); syncSettings(); } say("안녕하세요! 나래 동전 가게예요. 오백원으로 과자를 사 볼까요?"); };
 document.querySelectorAll("#levelSeg button").forEach((b) => (b.onclick = () => { S.level = b.dataset.level; save(); syncSettings(); }));
 $("#togSound").onclick = () => { S.sound = !S.sound; save(); syncSettings(); if (S.sound) ding(); };
+const toggleMusic = () => { S.music = !S.music; save(); syncSettings(); if (S.music) musicStart(); else musicStop(); };
+$("#togMusic").onclick = toggleMusic;
+$("#musicBtn").onclick = toggleMusic;
 $("#togSum").onclick = () => { S.showSum = !S.showSum; save(); syncSettings(); };
 $("#soundBtn").onclick = () => { S.sound = !S.sound; if (!S.sound) stopVoice(); save(); syncSettings(); };
 $("#startAll").onclick = () => startRun("all");
